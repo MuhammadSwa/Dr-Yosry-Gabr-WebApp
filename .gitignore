@@ -6,7 +6,6 @@ dist-ssr
 .env
 .nitro
 .tanstack
-.wrangler
 
 
 # Sync state file (regenerated each sync)
