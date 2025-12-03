@@ -7,6 +7,5 @@ dist-ssr
 .nitro
 .tanstack
 
-
 # Sync state file (regenerated each sync)
-public/data
+# Note: public/data is tracked in git for deployment

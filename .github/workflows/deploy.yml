@@ -46,6 +46,12 @@ jobs:
           # Skip sync during build (data should already be in repo)
           SKIP_SYNC: true
       
+      - name: Add .nojekyll file
+        run: touch ./dist/.nojekyll
+      
+      - name: Add 404.html for SPA routing
+        run: cp ./dist/index.html ./dist/404.html 2>/dev/null || true
+      
       - name: Setup Pages
         uses: actions/configure-pages@v4
       

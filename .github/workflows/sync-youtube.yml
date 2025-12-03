@@ -1,15 +1,19 @@
 name: Sync YouTube Data
 
 on:
-  # Run daily at 6 AM UTC
+  # Run every 3 hours
   schedule:
-    - cron: '0 6 * * *'
+    - cron: '0 */3 * * *'
   # Allow manual trigger
   workflow_dispatch:
   # Also run when sync script changes
   push:
     paths:
       - 'scripts/sync.ts'
+
+# Need write permissions to commit data changes
+permissions:
+  contents: write
 
 jobs:
   sync:
