@@ -1,0 +1,16 @@
+node_modules
+.DS_Store
+dist
+dist-ssr
+*.local
+.env
+.nitro
+.tanstack
+.wrangler
+
+
+# Local cache (YouTube data)
+.cache
+
+# Sync state file (regenerated each sync)
+public/data

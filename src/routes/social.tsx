@@ -1,0 +1,139 @@
+import { createFileRoute } from '@tanstack/solid-router'
+import { For } from "solid-js";
+import { socialMedia, icons } from "../lib/social";
+
+export const Route = createFileRoute('/social')({
+  component: SocialPage,
+})
+
+
+export default function SocialPage() {
+  return (
+    <div class="min-h-screen bg-emerald-950">
+      {/* Hero Section */}
+      <section class="relative pt-32 pb-16 overflow-hidden bg-gradient-to-b from-emerald-950 to-emerald-900">
+        {/* Background Pattern */}
+        <div class="absolute inset-0 opacity-10 pointer-events-none">
+          <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern
+                id="socialHeroPattern"
+                x="0"
+                y="0"
+                width="100"
+                height="100"
+                patternUnits="userSpaceOnUse"
+              >
+                <path
+                  d="M50 0 L100 50 L50 100 L0 50 Z"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="0.5"
+                  class="text-amber-300"
+                />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="10"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="0.5"
+                  class="text-amber-300"
+                />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#socialHeroPattern)" />
+          </svg>
+        </div>
+
+        <div class="container mx-auto px-4 sm:px-6 relative z-10 text-center">
+          <div class="w-fit max-w-full mx-auto relative mb-6">
+            <h1 class="text-3xl sm:text-4xl md:text-6xl font-bold font-amiri text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-white to-amber-200 py-2 leading-normal">
+              الصفحات الرسمية
+            </h1>
+            <div class="h-1 w-32 mx-auto bg-gradient-to-r from-transparent via-amber-500 to-transparent rounded-full mt-2" />
+          </div>
+          <p class="text-xl text-emerald-100/80 font-amiri max-w-2xl mx-auto leading-relaxed">
+            تابعوا فضيلة الدكتور يسري جبر عبر المنصات المختلفة لتصلكم الدروس
+            أينما كنتم
+          </p>
+        </div>
+      </section>
+
+      {/* Social Links Grid */}
+      <section class="py-16 bg-emerald-900 relative min-h-screen overflow-hidden">
+        {/* Ambient Lights */}
+        <div class="absolute top-1/4 right-0 w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+        <div class="absolute bottom-1/4 left-0 w-[600px] h-[600px] bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div class="container mx-auto px-4 sm:px-6 relative z-10">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            <For each={socialMedia}>
+              {(link) => (
+                <a
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class={`group relative flex items-center gap-5 p-5 bg-white/5 backdrop-blur-md border border-emerald-500/20 rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:bg-emerald-950/50 ${link.color}`}
+                >
+                  {/* Icon Container */}
+                  <div
+                    class={`flex-shrink-0 w-16 h-16 rounded-xl bg-emerald-950/50 border border-emerald-500/30 flex items-center justify-center transition-colors duration-300 ${link.bgHover}`}
+                  >
+                    <div
+                      class={`text-emerald-200 transition-colors duration-300 ${link.iconColor}`}
+                    >
+                      {/* 
+                          1. Using innerHTML to render the SVG string from the icons object.
+                          2. Keeping the Tailwind arbitrary variants for sizing the SVG children. 
+                      */}
+                      <span
+                        class="[&>svg]:w-8 [&>svg]:h-8"
+                        innerHTML={icons[link.icon as keyof typeof icons]}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Text Content */}
+                  <div class="flex-1">
+                    <h3 class="text-xl font-bold font-amiri text-white mb-1 group-hover:text-amber-200 transition-colors">
+                      {link.title}
+                    </h3>
+                  </div>
+
+                  {/* Arrow Icon */}
+                  <div
+                    class={`absolute left-5 top-1/2 -translate-y-1/2 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ${link.iconColor}`}
+                  >
+                    <svg
+                      class="w-6 h-6 rtl:rotate-180"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M13 7l5 5m0 0l-5 5m5-5H6"
+                      />
+                    </svg>
+                  </div>
+                </a>
+              )}
+            </For>
+          </div>
+
+          {/* Bottom Decorative Element */}
+          <div class="mt-20 text-center">
+            <div class="inline-flex items-center gap-2 text-emerald-500/30">
+              <span class="h-px w-12 bg-emerald-500/30" />
+              <span class="text-2xl">❖</span>
+              <span class="h-px w-12 bg-emerald-500/30" />
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
