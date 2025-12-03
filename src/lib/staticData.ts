@@ -84,6 +84,14 @@ function cacheSet(key: string, value: unknown) {
   cache.set(key, value)
 }
 
+// Get base path from Vite's import.meta.env.BASE_URL (set during build)
+function getBasePath(): string {
+  if (typeof window === "undefined") return ""
+  // import.meta.env.BASE_URL includes trailing slash
+  const base = import.meta.env.BASE_URL || "/"
+  return base.endsWith("/") ? base.slice(0, -1) : base
+}
+
 async function fetchJson<T>(path: string): Promise<T> {
   if (cache.has(path)) return cache.get(path) as T
   
@@ -99,8 +107,9 @@ async function fetchJson<T>(path: string): Promise<T> {
     return data
   }
   
-  // Client-side fetch
-  const res = await fetch(`/data${path}`)
+  // Client-side fetch - use base path for GitHub Pages compatibility
+  const basePath = getBasePath()
+  const res = await fetch(`${basePath}/data${path}`)
   if (!res.ok) throw new Error(`Failed to fetch ${path}: ${res.status}`)
   
   const data = await res.json()
