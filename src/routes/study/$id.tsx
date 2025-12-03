@@ -4,6 +4,7 @@ import VideoPage from '../../components/lessons/VideoPage'
 import { loadVideoPage, type VideoPageData } from '../../lib/staticData'
 
 export const Route = createFileRoute('/study/$id')({
+  ssr: false, // Client-side only - no prerendering
   loader: ({ params }) => loadVideoPage(params.id),
   component: StudyVideoPage,
 })

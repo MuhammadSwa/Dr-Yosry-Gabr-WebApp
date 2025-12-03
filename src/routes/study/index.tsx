@@ -34,6 +34,7 @@ const searchSchema = v.object({
 })
 
 export const Route = createFileRoute('/study/')({
+  ssr: false, // Client-side only - no prerendering
   validateSearch: searchSchema,
   loaderDeps: ({ search }) => ({
     page: search.page ?? 1,

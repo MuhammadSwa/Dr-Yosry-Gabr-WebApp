@@ -10,7 +10,6 @@ const basePath = '/Dr-Yosry-Gabr-WebApp/'
 
 export default defineConfig({
   // Set base path for GitHub Pages (repo name)
-  // base: process.env.GITHUB_ACTIONS ? '/Dr-Yosry-Gabr-WebApp/' : '/',
   base: basePath,
   plugins: [
     devtools(),
@@ -20,39 +19,46 @@ export default defineConfig({
     }),
     tailwindcss(),
     tanstackStart({
+      // Enable SPA mode for client-side fallback (generates _shell.html)
       spa: {
         enabled: true,
-        // Use the base path as mask path to match the configured base
         maskPath: basePath,
-      }
-      // prerender: {
-      //   // Enable prerendering for static export
-      //   enabled: true,
-      //   // Create /page/index.html for cleaner URLs
-      //   autoSubfolderIndex: true,
-      //   // Auto-discover all static routes
-      //   autoStaticPathsDiscovery: true,
-      //   // Don't crawl links - only prerender main pages (partial prerender)
-      //   crawlLinks: false,
-      //   // How many concurrent prerender jobs
-      //   concurrency: 10,
-      //   // Retry failed prerenders
-      //   retryCount: 2,
-      //   retryDelay: 1000,
-      //   // Don't fail the entire build on a single error
-      //   failOnError: false,
-      //   // Filter out anchor-only links and dashboard
-      //   filter: ({ path }) => {
-      //     if (path.startsWith('/dashboard')) return false
-      //     // Skip individual video pages - they load on-demand
-      //     if (path.match(/^\/study\/[^/]+$/)) return false
-      //     return true
-      //   },
-      //   // Log progress
-      //   onSuccess: ({ page }) => {
-      //     console.log(`✓ Prerendered: ${page.path}`)
-      //   },
-      // },
+      },
+      prerender: {
+        // Enable prerendering for static export
+        enabled: true,
+        // Create /page/index.html for cleaner URLs
+        autoSubfolderIndex: true,
+        // Auto-discover all static routes
+        autoStaticPathsDiscovery: true,
+        // Don't crawl links - causes duplicate pages with/without base path
+        crawlLinks: false,
+        // How many concurrent prerender jobs
+        concurrency: 10,
+        // Retry failed prerenders
+        retryCount: 3,
+        retryDelay: 1000,
+        // Don't fail the entire build on a single error
+        failOnError: false,
+        // Filter out /study, /dashboard, and anchor links
+        filter: ({ path }) => {
+          // Skip anchor-only links
+          if (path.includes('#')) return false
+          // Normalize path - remove base path if present
+          let cleanPath = path
+          if (path.startsWith(basePath)) {
+            cleanPath = '/' + path.slice(basePath.length)
+          }
+          // Skip /study and /dashboard - they are client-side only
+          if (cleanPath.startsWith('/study')) return false
+          if (cleanPath.startsWith('/dashboard')) return false
+          return true
+        },
+        // Log progress
+        onSuccess: ({ page }) => {
+          console.log(`✓ Prerendered: ${page.path}`)
+        },
+      },
     }),
     solidPlugin({ ssr: true }),
   ],
