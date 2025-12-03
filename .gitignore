@@ -9,8 +9,5 @@ dist-ssr
 .wrangler
 
 
-# Local cache (YouTube data)
-.cache
-
 # Sync state file (regenerated each sync)
 public/data
