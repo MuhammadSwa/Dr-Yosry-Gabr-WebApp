@@ -8,7 +8,8 @@ import solidPlugin from 'vite-plugin-solid'
 
 export default defineConfig({
   // Set base path for GitHub Pages (repo name)
-  base: process.env.GITHUB_ACTIONS ? '/Dr-Yosry-Gabr-WebApp/' : '/',
+  // base: process.env.GITHUB_ACTIONS ? '/Dr-Yosry-Gabr-WebApp/' : '/',
+  base: '/Dr-Yosry-Gabr-WebApp/',
   plugins: [
     devtools(),
     // this is the plugin that enables path aliases
