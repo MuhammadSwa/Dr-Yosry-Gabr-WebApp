@@ -84,27 +84,17 @@ function cacheSet(key: string, value: unknown) {
   cache.set(key, value)
 }
 
-function getBaseUrl(): string {
-  // Server-side: read from file system
-  if (typeof window === "undefined") {
-    return ""
-  }
-  // Client-side: use origin
-  return window.location.origin
-}
-
 async function fetchJson<T>(path: string): Promise<T> {
   if (cache.has(path)) return cache.get(path) as T
   
   const isServer = typeof window === "undefined"
   
   if (isServer) {
-    // On server, read directly from file system
-    const fs = await import("node:fs")
-    const nodePath = await import("node:path")
-    const filePath = nodePath.join(process.cwd(), "public", "data", path)
-    const content = fs.readFileSync(filePath, "utf-8")
-    const data = JSON.parse(content) as T
+    // On server/prerender, use file:// URL to read from public directory
+    const filePath = `file://${process.cwd()}/public/data${path}`
+    const res = await fetch(filePath)
+    if (!res.ok) throw new Error(`Failed to fetch ${path}: ${res.status}`)
+    const data = await res.json() as T
     cacheSet(path, data)
     return data
   }
