@@ -6,6 +6,9 @@ export const Route = createFileRoute('/books')({
 })
 
 
+// Import images
+// Note: In Vite/Solid, importing an image usually returns the URL string.
+// If your setup returns an object (like Astro's ImageMetadata), access the .src property.
 import DorarNaqia from "../assets/books_covers/dorar_naqia_cover.png";
 import AlanwarAlgalia from "../assets/books_covers/alanwar_algalia_cover.png";
 import Alhadra from "../assets/books_covers/alhadra_cover.png";
