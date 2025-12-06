@@ -5,7 +5,7 @@
  * 1. Checks for new/updated content from YouTube
  * 2. Fetches only what's changed
  * 3. Generates optimized static JSON files
- * 
+  
  * Usage: pnpm sync
  */
 
@@ -81,11 +81,11 @@ function getApiKey(): string | null {
 async function ytFetch<T>(endpoint: string, params: Record<string, string>): Promise<T> {
   const key = getApiKey()
   if (!key) throw new Error("YOUTUBE_API_KEY not set")
-  
+
   const url = new URL(`${YOUTUBE_API}/${endpoint}`)
   url.searchParams.set("key", key)
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
-  
+
   const res = await fetch(url.toString())
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
@@ -97,7 +97,7 @@ async function ytFetch<T>(endpoint: string, params: Record<string, string>): Pro
 async function fetchAllPlaylists(): Promise<Playlist[]> {
   const playlists: Playlist[] = []
   let pageToken: string | undefined
-  
+
   do {
     const params: Record<string, string> = {
       part: "snippet,contentDetails",
@@ -105,9 +105,9 @@ async function fetchAllPlaylists(): Promise<Playlist[]> {
       maxResults: "50",
     }
     if (pageToken) params.pageToken = pageToken
-    
+
     const res = await ytFetch<any>("playlists", params)
-    
+
     for (const item of res.items || []) {
       playlists.push({
         id: item.id,
@@ -119,14 +119,14 @@ async function fetchAllPlaylists(): Promise<Playlist[]> {
     }
     pageToken = res.nextPageToken
   } while (pageToken)
-  
+
   return playlists
 }
 
 async function fetchPlaylistVideoIds(playlistId: string): Promise<string[]> {
   const ids: string[] = []
   let pageToken: string | undefined
-  
+
   do {
     const params: Record<string, string> = {
       part: "contentDetails",
@@ -134,7 +134,7 @@ async function fetchPlaylistVideoIds(playlistId: string): Promise<string[]> {
       maxResults: "50",
     }
     if (pageToken) params.pageToken = pageToken
-    
+
     const res = await ytFetch<any>("playlistItems", params)
     for (const item of res.items || []) {
       if (item.contentDetails?.videoId) {
@@ -143,13 +143,13 @@ async function fetchPlaylistVideoIds(playlistId: string): Promise<string[]> {
     }
     pageToken = res.nextPageToken
   } while (pageToken)
-  
+
   return ids
 }
 
 async function fetchVideoDetails(videoIds: string[]): Promise<Video[]> {
   const videos: Video[] = []
-  
+
   // Batch in groups of 50
   for (let i = 0; i < videoIds.length; i += 50) {
     const batch = videoIds.slice(i, i + 50)
@@ -157,7 +157,7 @@ async function fetchVideoDetails(videoIds: string[]): Promise<Video[]> {
       part: "snippet,contentDetails,statistics",
       id: batch.join(","),
     })
-    
+
     for (const item of res.items || []) {
       videos.push({
         id: item.id,
@@ -173,7 +173,7 @@ async function fetchVideoDetails(videoIds: string[]): Promise<Video[]> {
       })
     }
   }
-  
+
   return videos
 }
 
@@ -185,13 +185,13 @@ async function fetchRecentVideoIds(limit = 50): Promise<{ id: string; publishedA
   })
   const uploadsPlaylistId = channelRes.items?.[0]?.contentDetails?.relatedPlaylists?.uploads
   if (!uploadsPlaylistId) throw new Error("Could not find uploads playlist")
-  
+
   const res = await ytFetch<any>("playlistItems", {
     part: "contentDetails,snippet",
     playlistId: uploadsPlaylistId,
     maxResults: limit.toString(),
   })
-  
+
   return (res.items || []).map((item: any) => ({
     id: item.contentDetails.videoId,
     publishedAt: item.contentDetails.videoPublishedAt || item.snippet.publishedAt,
@@ -240,11 +240,11 @@ function clearDir(dir: string) {
 
 async function loadExistingState(): Promise<{ state: SyncState | null; videos: Video[]; playlists: Playlist[] }> {
   const state = readJson<SyncState>(path.join(OUTPUT_DIR, "_sync.json"))
-  
+
   // Load existing videos from page files
   const videos: Video[] = []
   const videosDir = path.join(OUTPUT_DIR, "videos", "date")
-  
+
   if (fs.existsSync(videosDir)) {
     const files = fs.readdirSync(videosDir).filter(f => f.startsWith("page-"))
     for (const file of files) {
@@ -252,10 +252,10 @@ async function loadExistingState(): Promise<{ state: SyncState | null; videos: V
       if (page?.items) {
         for (const item of page.items) {
           // Convert old thumbnails format to new thumbnail string
-          const thumbnail = typeof item.thumbnail === 'string' 
-            ? item.thumbnail 
+          const thumbnail = typeof item.thumbnail === 'string'
+            ? item.thumbnail
             : item.thumbnails?.medium?.url || item.thumbnails?.default?.url || ""
-          
+
           videos.push({
             ...item,
             thumbnail,
@@ -265,25 +265,25 @@ async function loadExistingState(): Promise<{ state: SyncState | null; videos: V
       }
     }
   }
-  
+
   // Load playlists from index
   const index = readJson<{ playlists: Playlist[] }>(path.join(OUTPUT_DIR, "index.json"))
   const playlists = index?.playlists?.map(p => ({
     ...p,
     description: "",
   })) || []
-  
+
   return { state, videos, playlists }
 }
 
 async function sync() {
   console.log("\n🔄 Starting YouTube sync...\n")
   const startTime = Date.now()
-  
+
   const { state: existingState, videos: existingVideos, playlists: existingPlaylists } = await loadExistingState()
-  
+
   const hasApiKey = !!getApiKey()
-  
+
   // If no API key and we have existing data, just regenerate static files
   if (!hasApiKey) {
     if (existingVideos.length === 0) {
@@ -292,25 +292,25 @@ async function sync() {
     }
     console.log("⚠️  No YOUTUBE_API_KEY set, regenerating from existing data...")
     console.log(`   Found ${existingVideos.length} videos, ${existingPlaylists.length} playlists\n`)
-    
+
     await generateStaticFiles(existingVideos, existingPlaylists)
-    
+
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
     console.log(`\n✅ Regeneration complete in ${duration}s\n`)
     return
   }
-  
+
   // Step 1: Fetch playlists
   console.log("📋 Fetching playlists...")
   const playlists = await fetchAllPlaylists()
   console.log(`   Found ${playlists.length} playlists`)
-  
+
   // Step 2: Determine what needs updating
   let needsFullSync = !existingState || existingState.playlistCount !== playlists.length
   let newVideoIds: string[] = []
-  
+
   const existingVideoMap = new Map(existingVideos.map(v => [v.id, v]))
-  
+
   if (!needsFullSync && existingState) {
     // Check for new videos since last sync
     console.log("🔍 Checking for new videos...")
@@ -318,29 +318,29 @@ async function sync() {
     newVideoIds = recent
       .filter(v => new Date(v.publishedAt) > new Date(existingState.latestVideoDate))
       .map(v => v.id)
-    
+
     if (newVideoIds.length > 0) {
       console.log(`   Found ${newVideoIds.length} new videos`)
     } else {
       console.log("   No new videos found")
     }
   }
-  
+
   // Step 3: Fetch video data
   let allVideos: Video[]
-  
+
   if (needsFullSync) {
     console.log("📥 Full sync required, fetching all videos...")
-    
+
     // Collect all video IDs from playlists
     const videoPlaylistMap = new Map<string, { playlistId: string; playlistName: string; category: string }>()
     const allVideoIds = new Set<string>()
-    
+
     for (const playlist of playlists) {
       process.stdout.write(`   Playlist: ${playlist.name.slice(0, 40)}...`)
       const ids = await fetchPlaylistVideoIds(playlist.id)
       console.log(` (${ids.length} videos)`)
-      
+
       for (const id of ids) {
         allVideoIds.add(id)
         videoPlaylistMap.set(id, {
@@ -350,10 +350,10 @@ async function sync() {
         })
       }
     }
-    
+
     console.log(`\n📹 Fetching details for ${allVideoIds.size} videos...`)
     const videos = await fetchVideoDetails([...allVideoIds])
-    
+
     // Attach playlist info
     allVideos = videos.map(v => ({
       ...v,
@@ -361,10 +361,10 @@ async function sync() {
     }))
   } else if (newVideoIds.length > 0) {
     console.log("📥 Incremental sync, fetching new videos...")
-    
+
     // Get playlist mapping for new videos
     const videoPlaylistMap = new Map<string, { playlistId: string; playlistName: string; category: string }>()
-    
+
     for (const playlist of playlists) {
       const ids = await fetchPlaylistVideoIds(playlist.id)
       for (const id of newVideoIds) {
@@ -377,27 +377,27 @@ async function sync() {
         }
       }
     }
-    
+
     const newVideos = await fetchVideoDetails(newVideoIds)
     const newVideosWithPlaylist = newVideos.map(v => ({
       ...v,
       ...videoPlaylistMap.get(v.id),
     }))
-    
+
     // Merge with existing
     allVideos = [...newVideosWithPlaylist, ...existingVideos]
   } else {
     // No changes, use existing
     allVideos = existingVideos
   }
-  
+
   // Sort by date (newest first)
   allVideos.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
-  
+
   // Step 4: Generate static files
   console.log("\n📦 Generating static files...")
   await generateStaticFiles(allVideos, playlists)
-  
+
   // Step 5: Save sync state
   const newState: SyncState = {
     lastSync: new Date().toISOString(),
@@ -407,7 +407,7 @@ async function sync() {
     playlistEtags: {},
   }
   writeJson(path.join(OUTPUT_DIR, "_sync.json"), newState)
-  
+
   const duration = ((Date.now() - startTime) / 1000).toFixed(1)
   console.log(`\n✅ Sync complete in ${duration}s`)
   console.log(`   ${playlists.length} playlists, ${allVideos.length} videos\n`)
@@ -420,26 +420,26 @@ async function sync() {
 async function generateStaticFiles(videos: Video[], playlists: Playlist[]) {
   // Prepare sort variations
   const byDate = [...videos]
-  const byOldest = [...videos].sort((a, b) => 
+  const byOldest = [...videos].sort((a, b) =>
     new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime()
   )
-  const byViews = [...videos].sort((a, b) => 
+  const byViews = [...videos].sort((a, b) =>
     parseInt(b.viewCount || "0") - parseInt(a.viewCount || "0")
   )
-  
+
   const categories = [...new Set(playlists.map(p => p.category))]
-  
+
   // Filter playlists that actually have videos (handle deleted/private videos)
-  const playlistsWithVideos = playlists.filter(p => 
+  const playlistsWithVideos = playlists.filter(p =>
     videos.some(v => v.playlistId === p.id)
   )
-  
+
   // Update video counts to reflect actual available videos
   const playlistVideoCounts = new Map<string, number>()
   for (const p of playlists) {
     playlistVideoCounts.set(p.id, videos.filter(v => v.playlistId === p.id).length)
   }
-  
+
   // 1. Index file
   console.log("   → index.json")
   writeJson(path.join(OUTPUT_DIR, "index.json"), {
@@ -466,18 +466,18 @@ async function generateStaticFiles(videos: Video[], playlists: Playlist[]) {
       ),
     },
   })
-  
+
   // 2. Video pages (all, by category, by playlist) × (date, oldest, views)
   const sortVariants = [
     { name: "date", data: byDate },
     { name: "oldest", data: byOldest },
     { name: "views", data: byViews },
   ]
-  
+
   for (const { name: sort, data } of sortVariants) {
     // All videos
     generatePages(data, path.join(OUTPUT_DIR, "videos", sort), `   → videos/${sort}`)
-    
+
     // By category
     for (const cat of categories) {
       const filtered = data.filter(v => v.category === cat)
@@ -485,7 +485,7 @@ async function generateStaticFiles(videos: Video[], playlists: Playlist[]) {
         generatePages(filtered, path.join(OUTPUT_DIR, "categories", encodeURIComponent(cat), sort))
       }
     }
-    
+
     // By playlist
     for (const playlist of playlists) {
       const filtered = data.filter(v => v.playlistId === playlist.id)
@@ -494,7 +494,7 @@ async function generateStaticFiles(videos: Video[], playlists: Playlist[]) {
       }
     }
   }
-  
+
   // 3. Individual video files with nav
   console.log("   → video/*.json")
   const playlistVideoMap = new Map<string, Video[]>()
@@ -508,11 +508,11 @@ async function generateStaticFiles(videos: Video[], playlists: Playlist[]) {
   for (const vids of playlistVideoMap.values()) {
     vids.sort((a, b) => new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime())
   }
-  
+
   for (const video of videos) {
     const playlistVideos = video.playlistId ? playlistVideoMap.get(video.playlistId) || [] : []
     const idx = playlistVideos.findIndex(v => v.id === video.id)
-    
+
     writeJson(path.join(OUTPUT_DIR, "video", `${video.id}.json`), {
       ...video,
       nav: {
@@ -523,18 +523,18 @@ async function generateStaticFiles(videos: Video[], playlists: Playlist[]) {
       },
     })
   }
-  
+
   // 4. Search index (chunked) - with video summaries for efficient search results
   console.log("   → search/")
   const CHUNK_SIZE = 500
   const chunks = Math.ceil(videos.length / CHUNK_SIZE)
-  
+
   writeJson(path.join(OUTPUT_DIR, "search", "manifest.json"), {
     totalVideos: videos.length,
     totalChunks: chunks,
     chunkSize: CHUNK_SIZE,
   })
-  
+
   for (let i = 0; i < chunks; i++) {
     const chunk = byDate.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE)
     writeJson(path.join(OUTPUT_DIR, "search", `chunk-${i + 1}.json`), {
@@ -552,7 +552,7 @@ async function generateStaticFiles(videos: Video[], playlists: Playlist[]) {
       })),
     })
   }
-  
+
   // Category-specific search (with summaries)
   for (const cat of categories) {
     const filtered = byDate.filter(v => v.category === cat)
@@ -570,7 +570,7 @@ async function generateStaticFiles(videos: Video[], playlists: Playlist[]) {
       }))
     )
   }
-  
+
   // Playlist-specific search (with summaries)
   for (const playlist of playlists) {
     const filtered = byDate.filter(v => v.playlistId === playlist.id)
@@ -593,7 +593,7 @@ async function generateStaticFiles(videos: Video[], playlists: Playlist[]) {
 function generatePages(videos: Video[], dir: string, label?: string) {
   if (label) console.log(label)
   const totalPages = Math.ceil(videos.length / PAGE_SIZE)
-  
+
   for (let page = 1; page <= totalPages; page++) {
     const start = (page - 1) * PAGE_SIZE
     const items = videos.slice(start, start + PAGE_SIZE).map(v => ({
@@ -607,7 +607,7 @@ function generatePages(videos: Video[], dir: string, label?: string) {
       playlistName: v.playlistName,
       category: v.category,
     }))
-    
+
     writeJson(path.join(dir, `page-${page}.json`), {
       items,
       total: videos.length,
