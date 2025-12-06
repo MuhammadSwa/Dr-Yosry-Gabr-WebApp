@@ -12,9 +12,7 @@ on:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write  # Required for peaceiris/actions-gh-pages
 
 # Allow only one concurrent deployment
 concurrency:
@@ -22,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     
     steps:
