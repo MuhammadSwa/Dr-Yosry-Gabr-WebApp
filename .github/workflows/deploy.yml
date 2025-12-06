@@ -1,9 +1,12 @@
 name: Build and Deploy
 
 on:
-  # Trigger on pushes to main
+  # Trigger on pushes to main (code changes only)
   push:
     branches: [main]
+    # Ignore data-only changes
+    paths-ignore:
+      - 'public/data/**'
   # Allow manual trigger
   workflow_dispatch:
 
@@ -48,29 +51,16 @@ jobs:
       - name: Prepare for GitHub Pages
         run: |
           cd ./dist/client
-          touch .nojekyll
           # Create fallback pages for client-only routes (/study, /dashboard)
           mkdir -p study dashboard
           cp index.html study/index.html
           cp index.html dashboard/index.html
           cp index.html 404.html
       
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-      
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: './dist/client'
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    
-    steps:
       - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist/client
+          force_orphan: true
+          enable_jekyll: false

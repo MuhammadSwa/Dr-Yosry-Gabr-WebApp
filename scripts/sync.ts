@@ -399,7 +399,6 @@ async function sync() {
   await generateStaticFiles(allVideos, playlists)
 
   // Step 5: Save sync state
-  const syncTimestamp = Date.now()
   const newState: SyncState = {
     lastSync: new Date().toISOString(),
     videoCount: allVideos.length,
@@ -408,9 +407,6 @@ async function sync() {
     playlistEtags: {},
   }
   writeJson(path.join(OUTPUT_DIR, "_sync.json"), newState)
-  
-  // Write version file for cache busting
-  writeJson(path.join(OUTPUT_DIR, "version.json"), { v: syncTimestamp })
 
   const duration = ((Date.now() - startTime) / 1000).toFixed(1)
   console.log(`\n✅ Sync complete in ${duration}s`)

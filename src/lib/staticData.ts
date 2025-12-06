@@ -92,37 +92,39 @@ function getBasePath(): string {
   return base.endsWith("/") ? base.slice(0, -1) : base
 }
 
-// Cache-busting version - fetched once on startup
-let cacheVersion: string | null = null
+// Cache-busting version from sync metadata (independent of app rebuild)
+let dataVersion: string | null = null
 
-async function getCacheVersion(): Promise<string> {
-  if (cacheVersion) return cacheVersion
+async function getDataVersion(): Promise<string> {
+  if (dataVersion) return dataVersion
   
   try {
     const isServer = typeof window === "undefined"
     let url: string
     
     if (isServer) {
-      url = `file://${process.cwd()}/public/data/version.json`
+      url = `file://${process.cwd()}/public/data/_sync.json`
     } else {
       const basePath = getBasePath()
-      url = `${basePath}/data/version.json?_=${Date.now()}`
+      // Always fetch _sync.json fresh (it's small and tells us if data changed)
+      url = `${basePath}/data/_sync.json?_=${Date.now()}`
     }
     
     const res = await fetch(url)
     if (res.ok) {
-      const data = await res.json() as { v: number }
-      cacheVersion = String(data.v)
+      const data = await res.json() as { lastSync: string }
+      // Use lastSync timestamp as version (ISO string is fine, will be URL-encoded)
+      dataVersion = new Date(data.lastSync).getTime().toString()
     } else {
-      // Fallback if version.json doesn't exist
-      cacheVersion = String(Date.now())
+      // Fallback if _sync.json doesn't exist
+      dataVersion = String(Date.now())
     }
   } catch {
     // Fallback on error
-    cacheVersion = String(Date.now())
+    dataVersion = String(Date.now())
   }
   
-  return cacheVersion
+  return dataVersion
 }
 
 async function fetchJson<T>(path: string): Promise<T> {
@@ -142,7 +144,7 @@ async function fetchJson<T>(path: string): Promise<T> {
   
   // Client-side fetch - use base path for GitHub Pages compatibility and add cache-busting
   const basePath = getBasePath()
-  const version = await getCacheVersion()
+  const version = await getDataVersion()
   const separator = path.includes('?') ? '&' : '?'
   const res = await fetch(`${basePath}/data${path}${separator}v=${version}`)
   if (!res.ok) throw new Error(`Failed to fetch ${path}: ${res.status}`)

@@ -55,24 +55,19 @@ jobs:
             echo "✓ No changes in static data"
           fi
       
-      - name: Commit and push changes
-        if: steps.check_changes.outputs.changes == 'true'
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add public/data/
-          git commit -m "chore: sync YouTube data"
-          git push
-      
-      # Trigger rebuild after data sync (for static deployment)
+      # Build site with updated data
       - name: Build static site
         if: steps.check_changes.outputs.changes == 'true'
         run: pnpm build
       
-      # Deploy to GitHub Pages (uncomment and configure as needed)
-      # - name: Deploy to GitHub Pages
-      #   if: steps.check_changes.outputs.changes == 'true'
-      #   uses: peaceiris/actions-gh-pages@v3
-      #   with:
-      #     github_token: ${{ secrets.GITHUB_TOKEN }}
-      #     publish_dir: ./dist
+      # Deploy directly to gh-pages branch (keeps main branch clean!)
+      - name: Deploy to GitHub Pages
+        if: steps.check_changes.outputs.changes == 'true'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist/client
+          # Don't keep deployment history (saves space)
+          force_orphan: true
+          # Add .nojekyll for GitHub Pages
+          enable_jekyll: false
