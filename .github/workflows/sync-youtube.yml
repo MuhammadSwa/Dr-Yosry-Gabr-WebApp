@@ -60,6 +60,17 @@ jobs:
         if: steps.check_changes.outputs.changes == 'true'
         run: pnpm build
       
+      # Prepare for deployment
+      - name: Prepare for GitHub Pages
+        if: steps.check_changes.outputs.changes == 'true'
+        run: |
+          cd ./dist/client
+          touch .nojekyll
+          mkdir -p study dashboard
+          cp index.html study/index.html
+          cp index.html dashboard/index.html
+          cp index.html 404.html
+      
       # Deploy directly to gh-pages branch (keeps main branch clean!)
       - name: Deploy to GitHub Pages
         if: steps.check_changes.outputs.changes == 'true'
@@ -67,7 +78,5 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist/client
-          # Don't keep deployment history (saves space)
           force_orphan: true
-          # Add .nojekyll for GitHub Pages
           enable_jekyll: false

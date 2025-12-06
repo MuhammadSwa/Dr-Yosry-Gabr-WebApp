@@ -51,7 +51,7 @@ jobs:
       - name: Prepare for GitHub Pages
         run: |
           cd ./dist/client
-          # Create fallback pages for client-only routes (/study, /dashboard)
+          touch .nojekyll
           mkdir -p study dashboard
           cp index.html study/index.html
           cp index.html dashboard/index.html
