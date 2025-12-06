@@ -92,6 +92,39 @@ function getBasePath(): string {
   return base.endsWith("/") ? base.slice(0, -1) : base
 }
 
+// Cache-busting version - fetched once on startup
+let cacheVersion: string | null = null
+
+async function getCacheVersion(): Promise<string> {
+  if (cacheVersion) return cacheVersion
+  
+  try {
+    const isServer = typeof window === "undefined"
+    let url: string
+    
+    if (isServer) {
+      url = `file://${process.cwd()}/public/data/version.json`
+    } else {
+      const basePath = getBasePath()
+      url = `${basePath}/data/version.json?_=${Date.now()}`
+    }
+    
+    const res = await fetch(url)
+    if (res.ok) {
+      const data = await res.json() as { v: number }
+      cacheVersion = String(data.v)
+    } else {
+      // Fallback if version.json doesn't exist
+      cacheVersion = String(Date.now())
+    }
+  } catch {
+    // Fallback on error
+    cacheVersion = String(Date.now())
+  }
+  
+  return cacheVersion
+}
+
 async function fetchJson<T>(path: string): Promise<T> {
   if (cache.has(path)) return cache.get(path) as T
   
@@ -107,9 +140,11 @@ async function fetchJson<T>(path: string): Promise<T> {
     return data
   }
   
-  // Client-side fetch - use base path for GitHub Pages compatibility
+  // Client-side fetch - use base path for GitHub Pages compatibility and add cache-busting
   const basePath = getBasePath()
-  const res = await fetch(`${basePath}/data${path}`)
+  const version = await getCacheVersion()
+  const separator = path.includes('?') ? '&' : '?'
+  const res = await fetch(`${basePath}/data${path}${separator}v=${version}`)
   if (!res.ok) throw new Error(`Failed to fetch ${path}: ${res.status}`)
   
   const data = await res.json()
